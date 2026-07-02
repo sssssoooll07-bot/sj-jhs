@@ -5,11 +5,13 @@ import { fmtDate, fmtNum } from '../lib/format'
 import { formToProject, projectFields, projectToForm } from '../lib/editing'
 import { StatusBadge } from '../components/StatusBadge'
 import { EditDialog } from '../components/EditDialog'
+import { ConfirmBox } from '../components/ConfirmBox'
 
 export function ProjectsView({ data, update }: { data: DashboardData; update: Updater }) {
   const [status, setStatus] = useState('전체')
   const [division, setDivision] = useState('전체')
   const [editing, setEditing] = useState<ProjectRow | 'new' | null>(null)
+  const [deleting, setDeleting] = useState<ProjectRow | null>(null)
 
   const statuses = useMemo(
     () => ['전체', ...new Set(data.projects.map((p) => p.status).filter(Boolean))],
@@ -36,11 +38,6 @@ export function ProjectsView({ data, update }: { data: DashboardData; update: Up
     setEditing(null)
   }
 
-  function handleDelete(row: ProjectRow) {
-    if (confirm(`프로젝트 [${row.code}] ${row.name} 을(를) 삭제할까요?\n(연결된 매출/매입 기록은 삭제되지 않습니다)`)) {
-      update((d) => ({ ...d, projects: d.projects.filter((p) => p !== row) }))
-    }
-  }
 
   return (
     <div className="view">
@@ -90,7 +87,7 @@ export function ProjectsView({ data, update }: { data: DashboardData; update: Up
                 <td>{p.pm}</td>
                 <td className="row-actions">
                   <button className="btn-icon" title="수정" onClick={() => setEditing(p)}>✏️</button>
-                  <button className="btn-icon" title="삭제" onClick={() => handleDelete(p)}>🗑️</button>
+                  <button className="btn-icon" title="삭제" onClick={() => setDeleting(p)}>🗑️</button>
                 </td>
               </tr>
             ))}
@@ -115,6 +112,18 @@ export function ProjectsView({ data, update }: { data: DashboardData; update: Up
           initial={projectToForm(editing === 'new' ? null : editing)}
           onSave={(v) => handleSave(formToProject(v, editing === 'new' ? null : editing))}
           onCancel={() => setEditing(null)}
+        />
+      )}
+      {deleting && (
+        <ConfirmBox
+          danger
+          confirmLabel="삭제"
+          message={`프로젝트 [${deleting.code}] ${deleting.name} 을(를) 삭제할까요?\n(연결된 매출/매입 기록은 삭제되지 않습니다)`}
+          onConfirm={() => {
+            update((d) => ({ ...d, projects: d.projects.filter((p) => p !== deleting) }))
+            setDeleting(null)
+          }}
+          onCancel={() => setDeleting(null)}
         />
       )}
     </div>

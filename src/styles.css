@@ -308,6 +308,25 @@ body {
   display: flex; justify-content: flex-end; gap: 8px;
   padding: 14px 20px; border-top: 1px solid var(--line);
 }
+.modal--confirm { width: 420px; }
+.confirm__message {
+  padding: 20px; font-size: 14px; line-height: 1.7; white-space: pre-line;
+}
+.btn-solid--danger { background: var(--bad); }
+.btn-solid--danger:hover { background: #a01f1f; }
+
+/* ---------- 알림 배너 ---------- */
+.banner {
+  border-radius: 10px; padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; font-weight: 600;
+}
+.banner--error { background: #fdecea; color: var(--bad); border: 1px solid #f5c6c0; }
+.banner--info { background: #e3effa; color: var(--navy); border: 1px solid #bcd6ee; }
+.banner__close {
+  margin-left: auto; background: transparent; border: none;
+  cursor: pointer; color: inherit; font-size: 13px; padding: 2px 6px;
+}
 
 @media (max-width: 640px) {
   .modal__body { grid-template-columns: 1fr; }

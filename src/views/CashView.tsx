@@ -9,10 +9,12 @@ import { cashFields, cashToForm, formToCash } from '../lib/editing'
 import { StatusBadge } from '../components/StatusBadge'
 import { KpiCard } from '../components/KpiCard'
 import { EditDialog } from '../components/EditDialog'
+import { ConfirmBox } from '../components/ConfirmBox'
 
 export function CashView({ data, update }: { data: DashboardData; update: Updater }) {
   const [month, setMonth] = useState('전체')
   const [editing, setEditing] = useState<CashRow | 'new' | null>(null)
+  const [deleting, setDeleting] = useState<CashRow | null>(null)
 
   const months = useMemo(
     () => ['전체', ...new Set(data.cash.map((c) => c.date?.slice(0, 7) ?? '').filter(Boolean))],
@@ -33,11 +35,6 @@ export function CashView({ data, update }: { data: DashboardData; update: Update
     setEditing(null)
   }
 
-  function handleDelete(row: CashRow) {
-    if (confirm(`이 입출금 기록을 삭제할까요?\n${fmtDate(row.date)} · ${row.desc} · ${fmtNum(row.inflow || row.outflow)}원`)) {
-      update((d) => ({ ...d, cash: d.cash.filter((c) => c !== row) }))
-    }
-  }
 
   return (
     <div className="view">
@@ -93,7 +90,7 @@ export function CashView({ data, update }: { data: DashboardData; update: Update
                 <td>{c.account}</td>
                 <td className="row-actions">
                   <button className="btn-icon" title="수정" onClick={() => setEditing(c)}>✏️</button>
-                  <button className="btn-icon" title="삭제" onClick={() => handleDelete(c)}>🗑️</button>
+                  <button className="btn-icon" title="삭제" onClick={() => setDeleting(c)}>🗑️</button>
                 </td>
               </tr>
             ))}
@@ -108,6 +105,18 @@ export function CashView({ data, update }: { data: DashboardData; update: Update
           initial={cashToForm(editing === 'new' ? null : editing)}
           onSave={(v) => handleSave(formToCash(v))}
           onCancel={() => setEditing(null)}
+        />
+      )}
+      {deleting && (
+        <ConfirmBox
+          danger
+          confirmLabel="삭제"
+          message={`이 입출금 기록을 삭제할까요?\n${fmtDate(deleting.date)} · ${deleting.desc} · ${fmtNum(deleting.inflow || deleting.outflow)}원`}
+          onConfirm={() => {
+            update((d) => ({ ...d, cash: d.cash.filter((c) => c !== deleting) }))
+            setDeleting(null)
+          }}
+          onCancel={() => setDeleting(null)}
         />
       )}
     </div>

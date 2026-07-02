@@ -134,13 +134,8 @@ export function buildWorkbook(data: DashboardData): { wb: XLSX.WorkBook; preserv
   return { wb, preserved }
 }
 
-export function downloadWorkbook(data: DashboardData): void {
+export function downloadWorkbook(data: DashboardData): { preserved: boolean } {
   const { wb, preserved } = buildWorkbook(data)
-  if (!preserved) {
-    alert(
-      '원본 파일 사본이 없어 매출관리 · 매입관리 · 프로젝트 · 자금관리 시트만 내보냅니다.\n' +
-      '인사 · 거래처 · 기준정보 등 다른 시트는 원본 엑셀 파일에서 그대로 유지하세요.',
-    )
-  }
   XLSX.writeFile(wb, `sj-management_${todayISO()}.xlsx`, { compression: true })
+  return { preserved }
 }

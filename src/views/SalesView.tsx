@@ -6,12 +6,14 @@ import { fmtDate, fmtNum } from '../lib/format'
 import { formToSale, saleFields, saleToForm } from '../lib/editing'
 import { StatusBadge } from '../components/StatusBadge'
 import { EditDialog } from '../components/EditDialog'
+import { ConfirmBox } from '../components/ConfirmBox'
 
 export function SalesView({ data, update }: { data: DashboardData; update: Updater }) {
   const [division, setDivision] = useState('전체')
   const [status, setStatus] = useState('전체')
   const [q, setQ] = useState('')
   const [editing, setEditing] = useState<SaleRow | 'new' | null>(null)
+  const [deleting, setDeleting] = useState<SaleRow | null>(null)
 
   const divisions = useMemo(
     () => ['전체', ...new Set(data.sales.map((s) => s.division).filter(Boolean))],
@@ -48,11 +50,6 @@ export function SalesView({ data, update }: { data: DashboardData; update: Updat
     setEditing(null)
   }
 
-  function handleDelete(row: SaleRow) {
-    if (confirm(`이 매출 기록을 삭제할까요?\n${fmtDate(row.date)} · ${row.client} · ${fmtNum(row.total)}원`)) {
-      update((d) => ({ ...d, sales: d.sales.filter((s) => s !== row) }))
-    }
-  }
 
   return (
     <div className="view">
@@ -101,7 +98,7 @@ export function SalesView({ data, update }: { data: DashboardData; update: Updat
                 <td>{s.owner}</td>
                 <td className="row-actions">
                   <button className="btn-icon" title="수정" onClick={() => setEditing(s)}>✏️</button>
-                  <button className="btn-icon" title="삭제" onClick={() => handleDelete(s)}>🗑️</button>
+                  <button className="btn-icon" title="삭제" onClick={() => setDeleting(s)}>🗑️</button>
                 </td>
               </tr>
             ))}
@@ -127,6 +124,18 @@ export function SalesView({ data, update }: { data: DashboardData; update: Updat
           initial={saleToForm(editing === 'new' ? null : editing)}
           onSave={(v) => handleSave(formToSale(v))}
           onCancel={() => setEditing(null)}
+        />
+      )}
+      {deleting && (
+        <ConfirmBox
+          danger
+          confirmLabel="삭제"
+          message={`이 매출 기록을 삭제할까요?\n${fmtDate(deleting.date)} · ${deleting.client} · ${fmtNum(deleting.total)}원`}
+          onConfirm={() => {
+            update((d) => ({ ...d, sales: d.sales.filter((s) => s !== deleting) }))
+            setDeleting(null)
+          }}
+          onCancel={() => setDeleting(null)}
         />
       )}
     </div>
