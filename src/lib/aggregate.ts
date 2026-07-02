@@ -1,6 +1,36 @@
 import type { DashboardData, SaleRow } from '../types'
 import { todayISO } from './format'
 
+const byDate = <T extends { date: string | null }>(a: T, b: T) =>
+  (a.date ?? '').localeCompare(b.date ?? '')
+
+/** 편집 후 파생값 재계산: 정렬, 자금 잔액, 프로젝트 기성청구/수금 */
+export function rederive(d: DashboardData): DashboardData {
+  const sales = [...d.sales].sort(byDate)
+  const purchases = [...d.purchases].sort(byDate)
+
+  let balance = 0
+  const cash = [...d.cash].sort(byDate).map((c) => {
+    balance += c.inflow - c.outflow
+    return { ...c, balance }
+  })
+
+  const billedBy = new Map<string, number>()
+  const receivedBy = new Map<string, number>()
+  for (const s of sales) {
+    if (!s.project) continue
+    billedBy.set(s.project, (billedBy.get(s.project) ?? 0) + s.supply)
+    receivedBy.set(s.project, (receivedBy.get(s.project) ?? 0) + s.received)
+  }
+  const projects = d.projects.map((p) => ({
+    ...p,
+    billed: billedBy.get(p.code) ?? 0,
+    received: receivedBy.get(p.code) ?? 0,
+  }))
+
+  return { ...d, sales, purchases, cash, projects, modifiedAt: new Date().toISOString() }
+}
+
 export interface MonthlyAgg {
   month: string // "2026-01"
   sales: number

@@ -2,14 +2,17 @@ import { useMemo, useState } from 'react'
 import {
   CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
-import type { DashboardData } from '../types'
-import { fmtDate, fmtFull, fmtNum, toMillion } from '../lib/format'
+import type { CashRow, DashboardData } from '../types'
+import type { Updater } from '../App'
+import { fmtDate, fmtFull, fmtKRW, fmtNum, toMillion } from '../lib/format'
+import { cashFields, cashToForm, formToCash } from '../lib/editing'
 import { StatusBadge } from '../components/StatusBadge'
 import { KpiCard } from '../components/KpiCard'
-import { fmtKRW } from '../lib/format'
+import { EditDialog } from '../components/EditDialog'
 
-export function CashView({ data }: { data: DashboardData }) {
+export function CashView({ data, update }: { data: DashboardData; update: Updater }) {
   const [month, setMonth] = useState('전체')
+  const [editing, setEditing] = useState<CashRow | 'new' | null>(null)
 
   const months = useMemo(
     () => ['전체', ...new Set(data.cash.map((c) => c.date?.slice(0, 7) ?? '').filter(Boolean))],
@@ -21,6 +24,20 @@ export function CashView({ data }: { data: DashboardData }) {
   const sumOut = rows.reduce((s, r) => s + r.outflow, 0)
   const lastBalance = data.cash.length > 0 ? data.cash[data.cash.length - 1].balance : 0
   const series = data.cash.map((c, i) => ({ name: c.date ?? String(i), 잔액: toMillion(c.balance) }))
+
+  function handleSave(row: CashRow) {
+    update((d) => ({
+      ...d,
+      cash: editing === 'new' ? [...d.cash, row] : d.cash.map((c) => (c === editing ? row : c)),
+    }))
+    setEditing(null)
+  }
+
+  function handleDelete(row: CashRow) {
+    if (confirm(`이 입출금 기록을 삭제할까요?\n${fmtDate(row.date)} · ${row.desc} · ${fmtNum(row.inflow || row.outflow)}원`)) {
+      update((d) => ({ ...d, cash: d.cash.filter((c) => c !== row) }))
+    }
+  }
 
   return (
     <div className="view">
@@ -45,6 +62,7 @@ export function CashView({ data }: { data: DashboardData }) {
       </section>
 
       <div className="toolbar">
+        <button className="btn-solid" onClick={() => setEditing('new')}>+ 입출금 추가</button>
         <select value={month} onChange={(e) => setMonth(e.target.value)}>
           {months.map((m) => <option key={m}>{m}</option>)}
         </select>
@@ -59,7 +77,7 @@ export function CashView({ data }: { data: DashboardData }) {
             <tr>
               <th>일자</th><th>구분</th><th>계정과목</th><th>거래처/내역</th>
               <th className="num">입금액</th><th className="num">출금액</th>
-              <th className="num">잔액</th><th>계좌</th>
+              <th className="num">잔액</th><th>계좌</th><th>관리</th>
             </tr>
           </thead>
           <tbody>
@@ -73,11 +91,25 @@ export function CashView({ data }: { data: DashboardData }) {
                 <td className="num text-bad">{c.outflow > 0 ? fmtNum(c.outflow) : ''}</td>
                 <td className="num">{fmtNum(c.balance)}</td>
                 <td>{c.account}</td>
+                <td className="row-actions">
+                  <button className="btn-icon" title="수정" onClick={() => setEditing(c)}>✏️</button>
+                  <button className="btn-icon" title="삭제" onClick={() => handleDelete(c)}>🗑️</button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </section>
+
+      {editing && (
+        <EditDialog
+          title={editing === 'new' ? '입출금 추가' : '입출금 수정'}
+          fields={cashFields}
+          initial={cashToForm(editing === 'new' ? null : editing)}
+          onSave={(v) => handleSave(formToCash(v))}
+          onCancel={() => setEditing(null)}
+        />
+      )}
     </div>
   )
 }

@@ -234,6 +234,85 @@ body {
 .toolbar input[type="search"] { width: 260px; }
 .toolbar__summary { margin-left: auto; color: var(--muted); font-size: 13px; }
 
+/* ---------- 행 관리 버튼 ---------- */
+.row-actions { white-space: nowrap; }
+.btn-icon {
+  background: transparent; border: none; cursor: pointer;
+  font-size: 14px; padding: 2px 4px; border-radius: 6px;
+  opacity: 0.55;
+}
+.btn-icon:hover { opacity: 1; background: #eef1f5; }
+
+.btn-solid {
+  background: var(--blue); color: #fff;
+  border: none; border-radius: 8px;
+  padding: 8px 14px; font-size: 13px; font-weight: 600;
+  cursor: pointer;
+}
+.btn-solid:hover { background: var(--navy); }
+.btn-solid--gray { background: #94a3b8; }
+.btn-solid--gray:hover { background: #64748b; }
+
+.btn--primary { background: #2e75b6; border-color: #4a9bd8; }
+.btn--primary:hover { background: #4a9bd8; }
+
+.header__dirty { color: #ffd166; font-weight: 700; }
+
+/* ---------- 편집 모달 ---------- */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal {
+  background: #fff; border-radius: 14px;
+  width: 640px; max-width: 100%;
+  max-height: 90vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+}
+.modal__head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--line);
+}
+.modal__head h3 { margin: 0; font-size: 16px; }
+.modal__close {
+  background: transparent; border: none; cursor: pointer;
+  font-size: 15px; color: var(--muted); padding: 4px 8px; border-radius: 6px;
+}
+.modal__close:hover { background: #eef1f5; color: var(--text); }
+.modal__body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+}
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field__label { font-size: 12px; color: var(--muted); font-weight: 600; }
+.field__req { color: var(--bad); font-style: normal; margin-left: 2px; }
+.field input {
+  border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 10px; font-size: 13px;
+  font-family: inherit;
+}
+.field input:focus { outline: 2px solid #bcd6ee; border-color: var(--blue); }
+.field__hint { font-size: 11px; color: #94a3b8; }
+.modal__error {
+  margin: 0 20px; padding: 10px 14px;
+  background: #fdecea; color: var(--bad);
+  border-radius: 8px; font-size: 13px; font-weight: 600;
+}
+.modal__foot {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 14px 20px; border-top: 1px solid var(--line);
+}
+
+@media (max-width: 640px) {
+  .modal__body { grid-template-columns: 1fr; }
+}
+
 /* ---------- 반응형 ---------- */
 @media (max-width: 1000px) {
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }

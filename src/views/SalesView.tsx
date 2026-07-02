@@ -1,13 +1,17 @@
 import { useMemo, useState } from 'react'
-import type { DashboardData } from '../types'
+import type { DashboardData, SaleRow } from '../types'
+import type { Updater } from '../App'
 import { outstanding } from '../lib/aggregate'
 import { fmtDate, fmtNum } from '../lib/format'
+import { formToSale, saleFields, saleToForm } from '../lib/editing'
 import { StatusBadge } from '../components/StatusBadge'
+import { EditDialog } from '../components/EditDialog'
 
-export function SalesView({ data }: { data: DashboardData }) {
+export function SalesView({ data, update }: { data: DashboardData; update: Updater }) {
   const [division, setDivision] = useState('전체')
   const [status, setStatus] = useState('전체')
   const [q, setQ] = useState('')
+  const [editing, setEditing] = useState<SaleRow | 'new' | null>(null)
 
   const divisions = useMemo(
     () => ['전체', ...new Set(data.sales.map((s) => s.division).filter(Boolean))],
@@ -36,9 +40,24 @@ export function SalesView({ data }: { data: DashboardData }) {
   const sumReceived = rows.reduce((s, r) => s + r.received, 0)
   const sumOutstanding = rows.reduce((s, r) => s + outstanding(r), 0)
 
+  function handleSave(row: SaleRow) {
+    update((d) => ({
+      ...d,
+      sales: editing === 'new' ? [...d.sales, row] : d.sales.map((s) => (s === editing ? row : s)),
+    }))
+    setEditing(null)
+  }
+
+  function handleDelete(row: SaleRow) {
+    if (confirm(`이 매출 기록을 삭제할까요?\n${fmtDate(row.date)} · ${row.client} · ${fmtNum(row.total)}원`)) {
+      update((d) => ({ ...d, sales: d.sales.filter((s) => s !== row) }))
+    }
+  }
+
   return (
     <div className="view">
       <div className="toolbar">
+        <button className="btn-solid" onClick={() => setEditing('new')}>+ 매출 추가</button>
         <select value={division} onChange={(e) => setDivision(e.target.value)}>
           {divisions.map((d) => <option key={d}>{d}</option>)}
         </select>
@@ -62,7 +81,7 @@ export function SalesView({ data }: { data: DashboardData }) {
               <th>일자</th><th>사업부문</th><th>거래처</th><th>프로젝트</th><th>작업내용</th>
               <th className="num">공급가액</th><th className="num">합계금액</th>
               <th>수금상태</th><th className="num">수금액</th><th className="num">미수액</th>
-              <th>수금예정일</th><th>담당</th>
+              <th>수금예정일</th><th>담당</th><th>관리</th>
             </tr>
           </thead>
           <tbody>
@@ -80,6 +99,10 @@ export function SalesView({ data }: { data: DashboardData }) {
                 <td className={`num ${outstanding(s) > 0 ? 'text-bad' : ''}`}>{fmtNum(outstanding(s))}</td>
                 <td>{fmtDate(s.dueDate)}</td>
                 <td>{s.owner}</td>
+                <td className="row-actions">
+                  <button className="btn-icon" title="수정" onClick={() => setEditing(s)}>✏️</button>
+                  <button className="btn-icon" title="삭제" onClick={() => handleDelete(s)}>🗑️</button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -91,11 +114,21 @@ export function SalesView({ data }: { data: DashboardData }) {
               <td />
               <td className="num">{fmtNum(sumReceived)}</td>
               <td className="num">{fmtNum(sumOutstanding)}</td>
-              <td colSpan={2} />
+              <td colSpan={3} />
             </tr>
           </tfoot>
         </table>
       </section>
+
+      {editing && (
+        <EditDialog
+          title={editing === 'new' ? '매출 추가' : '매출 수정'}
+          fields={saleFields}
+          initial={saleToForm(editing === 'new' ? null : editing)}
+          onSave={(v) => handleSave(formToSale(v))}
+          onCancel={() => setEditing(null)}
+        />
+      )}
     </div>
   )
 }

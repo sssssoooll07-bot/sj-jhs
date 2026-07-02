@@ -1,11 +1,15 @@
 import { useMemo, useState } from 'react'
-import type { DashboardData } from '../types'
+import type { DashboardData, ProjectRow } from '../types'
+import type { Updater } from '../App'
 import { fmtDate, fmtNum } from '../lib/format'
+import { formToProject, projectFields, projectToForm } from '../lib/editing'
 import { StatusBadge } from '../components/StatusBadge'
+import { EditDialog } from '../components/EditDialog'
 
-export function ProjectsView({ data }: { data: DashboardData }) {
+export function ProjectsView({ data, update }: { data: DashboardData; update: Updater }) {
   const [status, setStatus] = useState('전체')
   const [division, setDivision] = useState('전체')
+  const [editing, setEditing] = useState<ProjectRow | 'new' | null>(null)
 
   const statuses = useMemo(
     () => ['전체', ...new Set(data.projects.map((p) => p.status).filter(Boolean))],
@@ -24,9 +28,24 @@ export function ProjectsView({ data }: { data: DashboardData }) {
   const sumBilled = rows.reduce((s, r) => s + r.billed, 0)
   const sumReceived = rows.reduce((s, r) => s + r.received, 0)
 
+  function handleSave(row: ProjectRow) {
+    update((d) => ({
+      ...d,
+      projects: editing === 'new' ? [...d.projects, row] : d.projects.map((p) => (p === editing ? row : p)),
+    }))
+    setEditing(null)
+  }
+
+  function handleDelete(row: ProjectRow) {
+    if (confirm(`프로젝트 [${row.code}] ${row.name} 을(를) 삭제할까요?\n(연결된 매출/매입 기록은 삭제되지 않습니다)`)) {
+      update((d) => ({ ...d, projects: d.projects.filter((p) => p !== row) }))
+    }
+  }
+
   return (
     <div className="view">
       <div className="toolbar">
+        <button className="btn-solid" onClick={() => setEditing('new')}>+ 프로젝트 추가</button>
         <select value={status} onChange={(e) => setStatus(e.target.value)}>
           {statuses.map((s) => <option key={s}>{s}</option>)}
         </select>
@@ -46,7 +65,7 @@ export function ProjectsView({ data }: { data: DashboardData }) {
               <th>상태</th><th>진행률</th>
               <th className="num">계약금액</th><th className="num">기성청구</th>
               <th className="num">수금액</th><th className="num">잔여계약</th>
-              <th>완료예정</th><th>PM</th>
+              <th>완료예정</th><th>PM</th><th>관리</th>
             </tr>
           </thead>
           <tbody>
@@ -69,6 +88,10 @@ export function ProjectsView({ data }: { data: DashboardData }) {
                 <td className="num">{fmtNum(p.contract - p.billed)}</td>
                 <td>{fmtDate(p.endDate)}</td>
                 <td>{p.pm}</td>
+                <td className="row-actions">
+                  <button className="btn-icon" title="수정" onClick={() => setEditing(p)}>✏️</button>
+                  <button className="btn-icon" title="삭제" onClick={() => handleDelete(p)}>🗑️</button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -79,11 +102,21 @@ export function ProjectsView({ data }: { data: DashboardData }) {
               <td className="num">{fmtNum(sumBilled)}</td>
               <td className="num">{fmtNum(sumReceived)}</td>
               <td className="num">{fmtNum(sumContract - sumBilled)}</td>
-              <td colSpan={2} />
+              <td colSpan={3} />
             </tr>
           </tfoot>
         </table>
       </section>
+
+      {editing && (
+        <EditDialog
+          title={editing === 'new' ? '프로젝트 추가' : '프로젝트 수정'}
+          fields={projectFields}
+          initial={projectToForm(editing === 'new' ? null : editing)}
+          onSave={(v) => handleSave(formToProject(v, editing === 'new' ? null : editing))}
+          onCancel={() => setEditing(null)}
+        />
+      )}
     </div>
   )
 }

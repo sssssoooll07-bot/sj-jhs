@@ -85,6 +85,7 @@ export interface ClientRow {
 export interface DashboardData {
   fileName: string
   loadedAt: string
+  modifiedAt?: string | null
   sales: SaleRow[]
   purchases: PurchaseRow[]
   projects: ProjectRow[]

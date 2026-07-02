@@ -3,7 +3,7 @@ import type { DashboardData } from '../types'
 import { parseWorkbook } from '../lib/parse'
 
 interface Props {
-  onLoaded: (data: DashboardData) => void
+  onLoaded: (data: DashboardData, raw: ArrayBuffer) => void
 }
 
 export function FileDrop({ onLoaded }: Props) {
@@ -20,7 +20,7 @@ export function FileDrop({ onLoaded }: Props) {
         throw new Error('엑셀 파일(.xlsx)만 불러올 수 있습니다.')
       }
       const buf = await file.arrayBuffer()
-      onLoaded(parseWorkbook(buf, file.name))
+      onLoaded(parseWorkbook(buf, file.name), buf)
     } catch (e) {
       setError(e instanceof Error ? e.message : '파일을 읽는 중 오류가 발생했습니다.')
     } finally {
@@ -74,8 +74,9 @@ export function FileDrop({ onLoaded }: Props) {
         <strong>🔒 데이터는 이 컴퓨터를 떠나지 않습니다.</strong>
         <ul>
           <li>엑셀 파일은 서버로 전송되지 않고, 브라우저 안에서만 읽고 계산합니다.</li>
-          <li>화면 표시용 데이터는 이 브라우저의 저장소(localStorage)에만 보관되며, 우측 상단 [데이터 지우기]로 언제든 삭제할 수 있습니다.</li>
-          <li>급여·연락처 등 민감정보 열은 아예 읽지 않습니다.</li>
+          <li>화면 데이터와 [엑셀 다운로드]용 원본 사본은 이 브라우저의 저장소에만 보관되며, [데이터 지우기]로 언제든 삭제할 수 있습니다.</li>
+          <li>급여·연락처 등 민감정보는 화면에 표시하지 않습니다.</li>
+          <li>웹에서 수정한 내용은 [엑셀 다운로드]로 새 엑셀 파일로 저장할 수 있습니다.</li>
           <li>공용 PC에서는 사용 후 반드시 [데이터 지우기]를 눌러 주세요.</li>
         </ul>
       </div>
